@@ -1,0 +1,31 @@
+{
+    "manifest_version": 3,
+    "name": "Cyberik",
+    "version": "1.0",
+    "description": "Projeto de Cyber para detecção de domínios",
+    "permissions": [
+    "cookies",
+    "webRequest",
+    "webNavigation",
+    "activeTab",
+    "notifications",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "icone.png",
+        "48": "icone.png",
+        "128": "icone.png"
+      }
+    },
+    "host_permissions": [
+      "<all_urls>"
+    ]
+  }
+  
