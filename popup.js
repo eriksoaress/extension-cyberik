@@ -1,25 +1,40 @@
 function calcularPontuacao() {
   let totalPontos = 100;
 
-  chrome.runtime.sendMessage({ message: 'check_cookies' }, function (response) {
-    const numCookies = response.thirdPartySessionCookies.length +
-                      response.thirdPartyPersistentCookies.length;
+  function safeSendMessage(message, callback) {
+    chrome.runtime.sendMessage(message, function (response) {
+      if (chrome.runtime.lastError) {
+        callback(null);
+      } else {
+        callback(response);
+      }
+    });
+  }
 
-    totalPontos -= numCookies; // Subtrai o número de cookies de terceiros
+  safeSendMessage({ message: 'check_cookies' }, function (response) {
+    if (response) {
+      const numCookies = (response.thirdPartySessionCookies || []).length +
+                         (response.thirdPartyPersistentCookies || []).length;
 
-    // Subtrai o número de conexões de terceiros
-    chrome.runtime.sendMessage({ message: 'check_connections' }, function (connectionResponse) {
-      const numConexoesTerceiras = connectionResponse.domains.length;
-      totalPontos -= numConexoesTerceiras;
+      totalPontos -= numCookies;
+    } else {
+      console.error('Resposta não recebida ao checar cookies.');
+    }
 
-      // Subtrai 20 se hijacking for detectado
-      chrome.runtime.sendMessage({ message: 'check_hijacking' }, function (hijackingResponse) {
+    safeSendMessage({ message: 'check_connections' }, function (connectionResponse) {
+      if (connectionResponse) {
+        const numConexoesTerceiras = (connectionResponse.domains || []).length;
+        totalPontos -= numConexoesTerceiras;
+      } else {
+        console.error('Resposta não recebida ao checar conexões.');
+      }
+
+      safeSendMessage({ message: 'check_hijacking' }, function (hijackingResponse) {
         if (hijackingResponse && hijackingResponse.hijackingDetected) {
           totalPontos -= 20; 
         }
 
-        // Subtrai 10 se fingerprint for detectado
-        chrome.runtime.sendMessage({ message: 'check_fingerprint' }, function (fingerprintResponse) {
+        safeSendMessage({ message: 'check_fingerprint' }, function (fingerprintResponse) {
           if (fingerprintResponse && fingerprintResponse.fingerprintDetected) {
             totalPontos -= 10; 
           }
@@ -30,6 +45,7 @@ function calcularPontuacao() {
     });
   });
 }
+
 
 function classificarPontuacao(totalPontos) {
   let classificacao = '';
